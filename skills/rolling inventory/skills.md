@@ -12,7 +12,7 @@ description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (
 - **常用模板**：Template 6 (供需缺口), Template 10 (滾動預測), Template 11 (採購建議報告)。
 
 ## SQL template
-### Template 10: 滾動庫存預測 ⭐⭐⭐
+
 -- 標準格式：所有滾動庫存查詢必須使用此輸出格式
 -- Standard Format: All rolling inventory queries MUST use this output format
 ```sql Redshift
