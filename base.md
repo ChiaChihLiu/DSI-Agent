@@ -1,8 +1,6 @@
 ---
 name: base information
 description: DSI base logic and table schema。
----
-
 
 ## Database Schema
 
@@ -74,4 +72,4 @@ SUM(CASE WHEN data_type = 'FG + In Transit' THEN value ELSE 0 END)
 - 使用日期比較排序，不使用字串 MAX()
 
 **⭐ 型號查詢規則** — 當用戶詢問特定型號時，所有 SQL 必須使用 `WHERE secondary_model LIKE '%model_name%'` 過濾
-
+-----
