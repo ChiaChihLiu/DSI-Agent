@@ -82,7 +82,7 @@ SELECT
     END as priority_level
 FROM variance_analysis 
 WHERE actual_sales IS NOT NULL 
-ORDER BY period DESC;
+ORDER BY period DESC
 ```
 
 
