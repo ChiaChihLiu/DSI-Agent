@@ -15,7 +15,6 @@ TABLE: netsuite.optw_dw_dsi_st
 - data_type (VARCHAR)       -- 時間週期或庫存分類
 - value (DECIMAL)           -- 數值
 ```
-
 ## Section Types
 - `TOTAL SALES` - 實際銷售
 - `Sales Forecast` - 銷售預測
@@ -72,4 +71,4 @@ SUM(CASE WHEN data_type = 'FG + In Transit' THEN value ELSE 0 END)
 - 使用日期比較排序，不使用字串 MAX()
 
 **⭐ 型號查詢規則** — 當用戶詢問特定型號時，所有 SQL 必須使用 `WHERE secondary_model LIKE '%model_name%'` 過濾
------
+---
