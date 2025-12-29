@@ -49,7 +49,7 @@ TABLE: netsuite.optw_dw_dsi_st
 - `FG + In Transit` 已經包含完整的可用庫存
 
 **SQL 實現：**
-```sql
+
 SUM(CASE WHEN data_type = 'FG + In Transit' THEN value ELSE 0 END)
 ```
 ### Purchase Forecast 可用月份偏移（核心邏輯）⭐⭐⭐
