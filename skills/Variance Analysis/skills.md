@@ -15,7 +15,8 @@ description: 自動偵測需求激增/積壓 (±20% thresholds) 追逐策略 vs 
 - OTB影響：負向變異凍結額度，正向變異需要額外預算
 - 用於驅動後續的WOS分析（第二步）和動態採購（第三步）
 
-## SQL template
+## SQL template 
+## SQL should match the Redshift
 WITH actual_sales AS (
     SELECT
         data_type as period,
