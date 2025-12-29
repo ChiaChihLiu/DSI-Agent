@@ -1,7 +1,6 @@
 ---
 name: psi_rolling_forecast
-description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉。
----
+description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉
 
 # 滾動預測 SOP
 當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」時，使用此技能。
@@ -130,4 +129,6 @@ FROM forecast_with_cumulative f
 CROSS JOIN current_inventory i
 ORDER BY f.period;
 ```
+
+-----
 
