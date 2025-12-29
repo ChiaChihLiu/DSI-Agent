@@ -5,7 +5,7 @@ description: DSI base logic and table schema。
 ## Database Schema
 
 Database : Redshift
-```sql
+
 TABLE: netsuite.optw_dw_dsi_st
 - region (VARCHAR)          -- 地區代碼 (e.g., 'AP')
 - primary_model (VARCHAR)     -- 主model (e.g., 'CinemaX D2')
