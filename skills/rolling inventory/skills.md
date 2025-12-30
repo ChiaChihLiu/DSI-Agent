@@ -53,9 +53,7 @@ monthly_forecast AS (
     WHERE section = 'Sales Forecast'
         AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
-
     UNION ALL
-
     -- Purchase Forecast: 次月供應（+1 month）⭐
     -- 202512 Purchase Forecast → 202601 可用
     SELECT
