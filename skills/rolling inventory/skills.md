@@ -1,6 +1,6 @@
 ---
 name: psi_rolling_forecast
-description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉,當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」時，使用此技能
+description: 執行進階的 PSI (進銷存) 滾動庫存預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉,當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」,[滾動庫存]時，使用此技能
 -----
 # 技能說明
 依據核心商務邏輯產生正確的SQL
@@ -14,7 +14,7 @@ description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (
 # 滾動預測 SOP
 - **Step1**： 了解用戶問題和意圖
 - **Step2**： 了解 database or tables or import logic,if need you can Call the 'Call 'My Sub-Workflow 2' to know the basic infromation
-- **Step3**： 了解滾動預測核心邏輯
+- **Step3**： 了解滾動庫存預測核心邏輯
               -- 1. 上期期末庫存 = 本期期初庫存
               -- 2. 期初庫存只用 FG + In Transit
               -- 3. 庫存基準日取上一個月為當月的庫存基準日
