@@ -1,6 +1,6 @@
 ---
 name: Variance Analysis
-description: 用戶問變異分析" / "需求激增" / "追逐策略" / "庫存積壓" / "OTB"時，使用此技能
+description: 用戶問[變異分析],[OTB]時，使用此技能
 ---
 
 ## 滾動預測 SOP
