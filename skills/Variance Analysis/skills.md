@@ -1,22 +1,12 @@
 ---
 name: Variance Analysis
-description: 自動偵測需求激增/積壓 (±20% thresholds) 追逐策略 vs 平準策略自動推薦 OTB額度管理與重新分配建議
+description: 用戶問變異分析" / "需求激增" / "追逐策略" / "庫存積壓" / "OTB"時，使用此技能
+---
 
-# 滾動預測 SOP
-用戶問變異分析" / "需求激增" / "追逐策略" / "庫存積壓" / "OTB"，使用此技能。
+## 滾動預測 SOP
 
-**說明：**
-- **第一步：變異分析** - 比較實際銷售 vs 預測銷售
-- **Variance > +20%** → 需求激增，建議啟用追逐策略（Chase Strategy），增加採購量
-- **Variance < -20%** → 庫存積壓風險，建議減少採購或促銷，計算OTB額度凍結影響
-- **Variance -10% to +10%** → 正常範圍，維持平準策略（Level Strategy）
-- 採購調整建議為變異數的50%（保守估計）
-- OTB影響：負向變異凍結額度，正向變異需要額外預算
-- 用於驅動後續的WOS分析（第二步）和動態採購（第三步）
 
 ## SQL template 
-## SQL should match the Redshift
-
 WITH actual_sales AS (
     SELECT
         data_type as period,
@@ -89,6 +79,3 @@ FROM variance_analysis
 WHERE actual_sales IS NOT NULL  -- Only show periods with actual data
 ORDER BY period DESC;
 ```
-
-
----
