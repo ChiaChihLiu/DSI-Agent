@@ -1,26 +1,24 @@
 ---
 name: psi_rolling_forecast
-description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉
-
-# 滾動預測 SOP
-當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」時，使用此技能。
+description: 執行進階的 PSI (進銷存) 滾動預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉,當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」時，使用此技能
+-----
+# 技能說明
+依據核心商務邏輯產生正確的SQL
 
 ## 核心商務邏輯
 - **採購偏移**：`Purchase Forecast` 的庫存需使用 `ADD_MONTHS(..., 1)` 偏移至次月。
 - **計算公式**：期末庫存 = 期初庫存 + 供應(t+1) - 需求(t)。
 - **輸出規範**：必須遵循標準 9 欄位格式（期間/基準日/期初/需求/供應/月淨變動/期末/狀態/建議採購）。
-- **常用模板**：Template 6 (供需缺口), Template 10 (滾動預測), Template 11 (採購建議報告)。
-
+- **常用模板**：SQL template。
+- 
+# 滾動預測 SOP
+- **Step1**： 了解用戶問題和意圖
+- **Step2**： 了解 database or tables or import logic,if need you can Call the 'Call 'My Sub-Workflow 2' to know the basic infromation
+- **Step3**： 了解滾動預測核心邏輯
+              -- 1. 上期期末庫存 = 本期期初庫存
+              -- 2. 期初庫存只用 FG + In Transit
+              -- 3. 庫存基準日取上一個月為當月的庫存基準日
 ## SQL template
-
--- 標準格式：所有滾動庫存查詢必須使用此輸出格式
--- Standard Format: All rolling inventory queries MUST use this output format
-```sql Redshift
--- 用戶問："顯示滾動庫存預測" / "未來庫存變化"
--- 關鍵邏輯：
--- 1. 上期期末庫存 = 本期期初庫存
--- 2. 期初庫存只用 FG + In Transit
--- 3. 庫存基準日取上一個月為當月的庫存基準日
 WITH latest_valid_inventory_date AS (
     SELECT
         section,
@@ -130,5 +128,4 @@ CROSS JOIN current_inventory i
 ORDER BY f.period;
 ```
 
------
 
