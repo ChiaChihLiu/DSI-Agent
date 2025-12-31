@@ -4,5 +4,11 @@
     "description": "各區purchase foracast,sales foracast, autual sales data ",
     "keywords": ["DSI", "庫存預估", "purchase foracast", "sales foracast"],
     "schema_file": "schemas/dsi.json"
+  },
+  {
+    "table": "dw_master.item_info",
+    "description": "產品主檔。包含品名、類別、顏色與規格。",
+    "keywords": ["品名", "商品分類", "尺寸", "規格"],
+    "schema_file": "schemas/item_info.json"
   }
 ]
