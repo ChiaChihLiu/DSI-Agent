@@ -1,1 +1,8 @@
-
+[
+  {
+    "table": "dw_sales.fact_variance",
+    "description": "財務差異分析主表。包含實際銷售金額與 OTB 預測數據。",
+    "keywords": ["銷售額", "OTB", "達成率", "變異分析"],
+    "schema_file": "schemas/fact_variance.json"
+  }
+]
