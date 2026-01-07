@@ -19,9 +19,7 @@ WITH ranked_data AS (
         ) as rn
     FROM netsuite.optw_dw_dsi_monthly_data_v 
     WHERE data_source IN ('Sold History', 'Sales Forecast') 
-        AND data_type BETWEEN '190001' AND '999912' 
-        AND region = 'EMEA' 
-        AND secondary_model = 'ML1080ST' 
+        AND data_type BETWEEN 'xxxxxxx' AND 'xxxxxx' 
     GROUP BY data_type, data_source
 )
 SELECT LEFT(data_type, 6) as data_type, total_sales, data_source
