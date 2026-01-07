@@ -15,35 +15,35 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 
 ### 查詢結構 (Query Structure)
 
-#### CTE 1: latest_valid_inventory_date
-- **目的**: 取得最新有效的庫存截止日期
-- **邏輯**:
-  - 查找上個月內的 "Inventory cut off date:%" section
-  - 提取並轉換日期格式 (DD-MON-YY)
-  - 取最新的一筆記錄
+**Step 1 - 參考日期**
+- 目的：找出有效的基準日期
+- 技術：WHERE 篩選 + ORDER BY + LIMIT 1
+- 輸出：cutoff_date, cutoff_date_str
 
-#### CTE 2: current_inventory
-- **目的**: 計算期初庫存
-- **邏輯**:
-  - 僅使用 `FG + In Transit` 資料類型
-  - 加總該日期的庫存數量
+**Step 2 - 期初狀態**
+- 目的：計算起始庫存/餘額
+- 技術：JOIN Step1 + SUM + GROUP BY
+- 輸出：initial_inventory, inventory_date
 
-#### CTE 3: monthly_forecast
-- **目的**: 彙總月度需求與供應
-- **邏輯**:
-  - **Sales Forecast**: 當月需求 (期間不變)
-  - **Purchase Forecast(ETA)**: 當月供應 (期間不變)
-    - 使用 ETA (預計到貨日期) 作為供應期間
+**Step 3 - 期間數據**
+- 目的：收集各期流入(供應)與流出(需求)
+- 技術：UNION ALL 合併多來源 + 時間位移(如適用) + GROUP BY 彙總
+- 輸出：period, demand, supply
 
-#### CTE 4: monthly_forecast_aggregated
-- **目的**: 按期間彙總需求與供應
-- **邏輯**: GROUP BY period 加總 demand 和 supply
+**Step 4 - 累積計算**
+- 目的：計算淨變動與滾動累計
+- 技術：Window Function - SUM() OVER (ORDER BY period ROWS UNBOUNDED PRECEDING)
+- 輸出：net_change, cumulative_net
 
-#### CTE 5: forecast_with_cumulative
-- **目的**: 計算累積淨變動
-- **邏輯**:
-  - `net_change` = supply - demand (月淨變動)
-  - `cumulative_net` = 累積所有期間的淨變動
+**Step 5 - 最終輸出**
+- 目的：組合所有數據 + 狀態判斷 + 建議
+- 技術：CROSS JOIN Step2 + LAG() 取前期 + CASE 門檻判斷
+- 輸出：期初庫存、需求、供應、期末庫存、狀態、建議量
+
+## 關鍵公式
+- 期初庫存 = initial_inventory + LAG(cumulative_net)
+- 期末庫存 = initial_inventory + cumulative_net
+- 淨變動 = supply - demand
 
 ### 主查詢邏輯 (Main Query Logic)
 
