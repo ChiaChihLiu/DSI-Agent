@@ -1,44 +1,28 @@
-## 資料來源
-
-### Database Tables
-
-#### table_name : netsuite.optw_dw_dsi_monthly_data_v
-- **用途**: Transaction data (交易數據)
-- **說明**: 存儲月度銷售交易資料 & item spec 
-**欄位 (Columns):**
-secondary_model
-primary_model
-dmd_chip
-illumination_power
-light_source
-major_group
-min_brightness
-minor_group
-native_resolution
-owner
-power_consumption_w_bright_220v
-power_consumption_w_eco_110v
-power_consumption_w_eco_220v
-pallet_quantity_air
-pallet_quantity_sea
-pixel_configuration
-pixe_pitch
-pixels
-platform
-product_group
-projector_lens
-scree_material
-screen_size
-screen_type
-sensor
-supplier_group
-supplier_tariff
-touch_type
-typ_brightness
-brightness
-company_report_code_hq
-region
-section
-data_type
-value
-bucket_date
+# DATABASE SCHEMA
+- Table : netsuite.optw_dw_dsi_monthly_data_v
+- Columns
+-- region: Business unit identifier, display label : "Region"
+-- primary_model: Parent category of secondary_model, display label : "Pri. Model"
+-- secondary_model: Detailed data unit, display label : "Sec. Model"
+-- dmd_chip: Specific chip identifier, display label : "DMD Chip"
+-- section: Data type category with values:
+  --- \"ETA Purchase Forecast\" (supply quantity received, YYYYMM month bucket)
+  --- \"Purchase Forecast\" (supply quantity shipped, YYYYMM month bucket)
+  --- \"Sales Forecast\" (demand quantity, YYYYMM month bucket)
+  --- \"TOTAL SALES\" (historical sales quantity, YYYYMM month bucket)
+  --- \"Inventory cut off date: DD-MON-YY\" ( the on hand stock as supply , DD-MON-YY the date snapshot)
+-- data_type: Source of supply chain or sales data.
+-- value: Numeric quantity associated with data_type and section.
+-- bucket_date : the date that demand and supply quantity in column value will be available.
+-- data_source: the data source with values:
+  --- \"Purchase Forecast\" : value column is supply quantity with bucket date
+  --- \"Sales Forecast\" : value column is demand quantity with bucket date
+  --- \"Sold History\"  : value column is quantity sold with bucket date
+  --- \"Begin Inventory\" : value column is supply quantity from inventory with bucket date
+  --- \"Current Inventory\" : value column is current on hand quantity with bucket date
+- Others Column Alias Name 
+-- bucket_date	, display label : "Bucket"
+-- begin_inventory	, display label : "Begin Inv."
+-- eta_purchase_forecast	, display label : "Purchase FCST(ETA)"
+-- sales_forecast	, display label : "Sales FCST"
+-- end_inventory, display label : "End Inv."
