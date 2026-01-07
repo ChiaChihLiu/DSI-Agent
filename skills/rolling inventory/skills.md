@@ -60,7 +60,7 @@ monthly_forecast AS (
         SUBSTRING(data_type, 1, 6) as period,
         0 as demand,
         SUM(value) as supply
-    FROM netsuite.optw_dw_dsi_st
+    FROM netsuite.optw_dw_dsi_monthly_data_v
     WHERE section = 'Purchase Forecast(ETA)'
         AND SUBSTRING(data_type, 1, 6) >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
