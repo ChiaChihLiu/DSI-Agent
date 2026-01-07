@@ -1,47 +1,62 @@
-database_config:
-  engine: Redshift
-  table_name: netsuite.optw_dw_dsi_st
-  columns:
-    region: "VARCHAR - Region code (e.g., AP)"
-    primary_model: "VARCHAR - Main model name"
-    secondary_model: "VARCHAR - Specific model name"
-    dmd_chp: "DECIMAL - Demand parameter"
-    section: "VARCHAR - Category (Sales, Purchase, Inventory)"
-    data_type: "VARCHAR - Time period (YYYYMM) or Inventory type (FG, LII)"
-    value: "DECIMAL - Numeric result"
+## 資料來源
 
-business_logic:
-  inventory_calculation:
-    description: "Calculate Beginning Inventory"
-    formula: "FG + In Transit"
-    logic_type: "Inventory Cut-off"
-    sql_filter: "SUM(CASE WHEN data_type = 'FG + In Transit' THEN value ELSE 0 END)"
+### Database Tables
 
-  purchase_offset:
-    description: "Purchase Forecast availability lag"
-    rule: "M+1 (Purchase in current month is available next month)"
-    implementation: "ADD_MONTHS(TO_DATE(LEFT(data_type, 6), 'YYYYMM'), 1)"
-    trigger: "section = 'Purchase Forecast'"
+#### table_name : optw_dw_dsi_monthly_data
+- **用途**: Transaction data (交易數據)
+- **說明**: 存儲月度銷售交易資料
+- **關聯鍵**: `primary_model`, `secondary_model`
 
-  baseline_selection:
-    description: "Selection of inventory starting point"
-    rule: "Use previous month as the baseline for the current month"
-    sorting_requirement: "Sort by date object, do not use string MAX()"
+**欄位 (Columns):**
+- `region` - 區域
+- `primary_model` - 主要型號
+- `secondary_model` - 次要型號
+- `dmd_chip` - DMD 晶片
+- `section` - 區段/類別
+- `data_type` - 資料類型
+- `value` - 數值
+- `bucket_date` - 時間區間/日期
+- `data_source` - 資料來源
 
-  query_rules:
-    model_search:
-      operator: "LIKE"
-      target_column: "secondary_model"
-      syntax: "WHERE secondary_model LIKE '%{model_name}%'"
+####  table_name : optw_dw_dsi_model
+- **用途**: Model specification (型號規格)
+- **說明**: 存儲產品型號的規格資料
+- **關聯鍵**: `primary_model`, `secondary_model`
 
-section_mapping:
-  actuals: "TOTAL SALES"
-  forecast_demand: "Sales Forecast"
-  forecast_supply: "Purchase Forecast"
-  inventory_snapshot: "Inventory cut off date:*" # Use wildcard or regex
-  delivery: "Delivery Plan"
+**欄位 (Columns):**
+- `secondary_model` - 次要型號
+- `primary_model` - 主要型號
+- `dmd_chip` - DMD 晶片
+- `illumination_power` - 照明功率
+- `light_source` - 光源
+- `major_group` - 主要群組
+- `min_brightness` - 最小亮度
+- `minor_group` - 次要群組
+- `native_resolution` - 原生解析度
+- `owner` - 所有者
+- `power_consumption_w_bright_220v` - 功耗 (亮模式, 220V)
+- `power_consumption_w_eco_110v` - 功耗 (節能模式, 110V)
+- `power_consumption_w_eco_220v` - 功耗 (節能模式, 220V)
+- `pallet_quantity_air` - 棧板數量 (空運)
+- `pallet_quantity_sea` - 棧板數量 (海運)
+- `pixel_configuration` - 像素配置
+- `pixe_pitch` - 像素間距
+- `pixels` - 像素數
+- `platform` - 平台
+- `product_group` - 產品群組
+- `projector_lens` - 投影鏡頭
+- `scree_material` - 螢幕材質
+- `screen_size` - 螢幕尺寸
+- `screen_type` - 螢幕類型
+- `sensor` - 感應器
+- `supplier_group` - 供應商群組
+- `supplier_tariff` - 供應商關稅
+- `touch_type` - 觸控類型
+- `typ_brightness` - 典型亮度
+- `brightness` - 亮度
+- `company_report_code_hq` - 公司報告代碼 (總部)
 
-inventory_types:
-  - FG
-  - FG + In Transit
-  - LII
+### Table Relationship
+- 兩個表通過 `primary_model` 和 `secondary_model` 關聯
+- `optw_dw_dsi_monthly_data` 記錄交易數據
+- `optw_dw_dsi_model` 提供對應的型號規格資訊
