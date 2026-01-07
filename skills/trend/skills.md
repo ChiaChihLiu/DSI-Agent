@@ -7,6 +7,15 @@ description: 當用戶提到「sales trend」、「銷售趨勢]使用此技能
 -- If sold history and sales forecast in same date bucket then use sales forecast as sales quantity 
 -- if user not mention the period, just query all available period data
 -- summary the sales trend
+
+### Standard Table Format for sales trend ⭐
+
+When responding to rolling inventory queries, ALWAYS present results in this standardized format:
+
+| data_type |  total_sales | data_source |
+|------     |-----------   |---------    |
+| xxxxx     | xxxxxx       |xxxxxxx      |
+
 **SQL template**
 WITH ranked_data AS (
     SELECT 
