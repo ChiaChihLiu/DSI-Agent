@@ -51,9 +51,7 @@ monthly_forecast AS (
     WHERE section = 'Sales Forecast'
         AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
-
     UNION ALL
-
     -- Purchase Forecast: 當月供應 (使用 ETA)
     SELECT
         SUBSTRING(data_type, 1, 6) as period,
