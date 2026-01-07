@@ -13,7 +13,7 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 - **查詢型號以secondary_model為主**
 Where secondary_model like 'model_name'
 ## SQL Query Template
-
+###### Add a table alias and qualify the column reference
 
 task_id: T1_inventory_cutoff_date
 description: 從上個月的庫存截止日期中，取得最新的一筆
@@ -160,6 +160,7 @@ output_columns:
 否則:
   建議採購量 = NULL
 ```
+
 
 ### 輸出欄位 (Output Columns)
 
