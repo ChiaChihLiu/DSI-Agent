@@ -10,106 +10,81 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 - **輸出規範**：必須遵循標準 9 欄位格式（期間/基準日/期初/需求/供應/月淨變動/期末/狀態/建議採購）。
 - **常用模板**：SQL template。
 - 
-# 滾動預測 SOP
-- **Step1**： 了解用戶問題和意圖
-- **Step2**： 了解 database or tables or import logic,if need you can Call the 'Call 'My Sub-Workflow 2' to know the basic infromation
-- **Step3**： 了解滾動庫存預測核心邏輯
-              -- 1. 上期期末庫存 = 本期期初庫存
-              -- 2. 期初庫存只用 FG + In Transit
-              -- 3. 庫存基準日取上一個月為當月的庫存基準日
-## SQL template
-WITH latest_valid_inventory_date AS (
-    SELECT
-        section,
-        SUBSTRING(section, 24) as cutoff_date_str,
-        TO_DATE(SUBSTRING(section, 24), 'DD-MON-YY') as cutoff_date
-    FROM optw_dw_dsi_monthly_data
-    WHERE section LIKE 'Inventory cut off date:%'
-        AND TO_DATE(SUBSTRING(section, 24), 'DD-MON-YY')
-            BETWEEN DATE_TRUNC('month', ADD_MONTHS(CURRENT_DATE, -1)::TIMESTAMP)::DATE
-            AND LAST_DAY(ADD_MONTHS(CURRENT_DATE, -1))
-    ORDER BY cutoff_date DESC
-    LIMIT 1
-),
-current_inventory AS (
-    SELECT
-        SUM(CASE WHEN t.data_type = 'FG + In Transit' THEN t.value ELSE 0 END) as initial_inventory,
-        l.cutoff_date_str as inventory_date
-    FROM latest_valid_inventory_date l
-    JOIN optw_dw_dsi_monthly_data t
-        ON t.section = l.section
-        AND t.data_type = 'FG + In Transit'
-    GROUP BY l.cutoff_date_str
-),
-monthly_forecast AS (
-    -- Sales Forecast: 當月需求
-    SELECT
-        SUBSTRING(data_type, 1, 6) as period,
-        SUM(value) as demand,
-        0 as supply
-    FROM optw_dw_dsi_monthly_data
-    WHERE section = 'Sales Forecast'
-        AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
-    GROUP BY SUBSTRING(data_type, 1, 6)
-    UNION ALL
-    -- Purchase Forecast: 當月供應 (使用 ETA)
-    SELECT
-        SUBSTRING(data_type, 1, 6) as period,
-        0 as demand,
-        SUM(value) as supply
-    FROM optw_dw_dsi_monthly_data
-    WHERE section = 'Purchase Forecast(ETA)'
-        AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
-    GROUP BY SUBSTRING(data_type, 1, 6)
-),
-monthly_forecast_aggregated AS (
-    SELECT
-        period,
-        SUM(demand) as demand,
-        SUM(supply) as supply
-    FROM monthly_forecast
-    GROUP BY period
-),
-forecast_with_cumulative AS (
-    SELECT
-        period,
-        demand,
-        supply,
-        (supply - demand) as net_change,
-        SUM(supply - demand) OVER (
-            ORDER BY period
-            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-        ) as cumulative_net
-    FROM monthly_forecast_aggregated
-)
-SELECT
-    f.period as 期間,
-    i.inventory_date as 庫存基準日,
-    ROUND(
-        i.initial_inventory + COALESCE(LAG(f.cumulative_net) OVER (ORDER BY f.period), 0),
-        0
-    ) as 期初庫存,
-    ROUND(f.demand, 0) as 需求,
-    ROUND(f.supply, 0) as 供應,
-    ROUND(f.net_change, 0) as 月淨變動,
-    ROUND(
-        i.initial_inventory + f.cumulative_net,
-        0
-    ) as 預計期末庫存,
-    CASE
-        WHEN i.initial_inventory + f.cumulative_net < 0 THEN '🔴 預計缺貨'
-        WHEN i.initial_inventory + f.cumulative_net < 30 THEN '🟡 低庫存警告'
-        WHEN i.initial_inventory + f.cumulative_net < 60 THEN '🟢 正常'
-        ELSE '🟢 健康'
-    END as 庫存狀態,
-    CASE
-        WHEN i.initial_inventory + f.cumulative_net < 30 AND f.demand > 0
-        THEN ROUND(60 - (i.initial_inventory + f.cumulative_net), 0)
-        ELSE NULL
-    END as 建議採購量
-FROM forecast_with_cumulative f
-CROSS JOIN current_inventory i
-ORDER BY f.period;
+## SQL Query Template
+
+### 查詢結構 (Query Structure)
+
+#### CTE 1: latest_valid_inventory_date
+- **目的**: 取得最新有效的庫存截止日期
+- **邏輯**:
+  - 查找上個月內的 "Inventory cut off date:%" section
+  - 提取並轉換日期格式 (DD-MON-YY)
+  - 取最新的一筆記錄
+
+#### CTE 2: current_inventory
+- **目的**: 計算期初庫存
+- **邏輯**:
+  - 僅使用 `FG + In Transit` 資料類型
+  - 加總該日期的庫存數量
+
+#### CTE 3: monthly_forecast
+- **目的**: 彙總月度需求與供應
+- **邏輯**:
+  - **Sales Forecast**: 當月需求 (期間不變)
+  - **Purchase Forecast(ETA)**: 當月供應 (期間不變)
+    - 使用 ETA (預計到貨日期) 作為供應期間
+
+#### CTE 4: monthly_forecast_aggregated
+- **目的**: 按期間彙總需求與供應
+- **邏輯**: GROUP BY period 加總 demand 和 supply
+
+#### CTE 5: forecast_with_cumulative
+- **目的**: 計算累積淨變動
+- **邏輯**:
+  - `net_change` = supply - demand (月淨變動)
+  - `cumulative_net` = 累積所有期間的淨變動
+
+### 主查詢邏輯 (Main Query Logic)
+
+#### 期初庫存計算
+```
+期初庫存 = 初始庫存 + LAG(累積淨變動)
+```
+- 使用 LAG() 取得上期累積淨變動
+- 第一期的期初庫存 = 初始庫存
+
+#### 期末庫存計算
+```
+預計期末庫存 = 初始庫存 + 本期累積淨變動
+```
+
+#### 庫存狀態判斷
+- 🔴 預計缺貨: < 0
+- 🟡 低庫存警告: < 30
+- 🟢 正常: < 60
+- 🟢 健康: >= 60
+
+#### 建議採購量 (v1.6 邏輯)
+```
+當 期末庫存 < 30 且 未來有需求 (demand > 0):
+  建議採購量 = 60 - 期末庫存
+否則:
+  建議採購量 = NULL
+```
+
+### 輸出欄位 (Output Columns)
+
+| 欄位 | 說明 | 計算邏輯 |
+|------|------|----------|
+| `期間` | 預測期間 (YYYYMM) | - |
+| `庫存基準日` | 庫存快照日期 | 來自 latest_valid_inventory_date |
+| `期初庫存` | 期初庫存數量 | 初始庫存 + LAG(累積淨變動) |
+| `需求` | Sales Forecast | 當月銷售預測 |
+| `供應` | Purchase Forecast | 當月採購預測 (ETA) |
+| `月淨變動` | 淨變動 | 供應 - 需求 |
+| `預計期末庫存` | 預計期末庫存 | 初始庫存 + 累積淨變動 |
+| `庫存狀態` | 健康度指標 | 根據期末庫存判斷 |
+| `建議採購量` | 建議採購數量 | 60 - 期末庫存 (當 < 30 且有需求) |
 ```
 
 
