@@ -60,7 +60,7 @@ output_columns:
   - supply = 0 (固定值)
 
 task_id: T4_purchase_forecast
-description: 取得採購預測作為供應，期間需 +1 month
+description: 取得採購預測作為供應
 table: netsuite.optw_dw_dsi_monthly_data_v
 filters:
   - section = 'Purchase Forecast(ETA)'
@@ -120,47 +120,6 @@ logic:
     - 條件1: 期末庫存 < 30
     - 條件2: demand > 0 (⚠️ 確保有需求才建議)
     - 計算: 60 - 期末庫存
-
-output_columns:
-  - 期間
-  - 庫存基準日
-  - 期初庫存
-  - 需求
-  - 供應
-  - 月淨變動
-  - 預計期末庫存
-  - 庫存狀態
-  - 建議採購量
- 
-
-### 主查詢邏輯 (Main Query Logic)
-
-#### 期初庫存計算
-```
-期初庫存 = 初始庫存 + LAG(累積淨變動)
-```
-- 使用 LAG() 取得上期累積淨變動
-- 第一期的期初庫存 = 初始庫存
-
-#### 期末庫存計算
-```
-預計期末庫存 = 初始庫存 + 本期累積淨變動
-```
-
-#### 庫存狀態判斷
-- 🔴 預計缺貨: < 0
-- 🟡 低庫存警告: < 30
-- 🟢 正常: < 60
-- 🟢 健康: >= 60
-
-#### 建議採購量 (v1.6 邏輯)
-```
-當 期末庫存 < 30 且 未來有需求 (demand > 0):
-  建議採購量 = 60 - 期末庫存
-否則:
-  建議採購量 = NULL
-```
-
 
 ### 輸出欄位 (Output Columns)
 
