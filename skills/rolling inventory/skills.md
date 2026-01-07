@@ -17,6 +17,15 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
               -- 1. 上期期末庫存 = 本期期初庫存
               -- 2. 期初庫存只用 FG + In Transit
               -- 3. 庫存基準日取上一個月為當月的庫存基準日
+
+### Standard Table Format for Rolling Inventory Queries ⭐
+
+When responding to rolling inventory queries, ALWAYS present results in this standardized format:
+
+| 期間 | 庫存基準日 | 期初庫存 | 需求 | 供應 | 月淨變動 | 預期期末庫存 | 庫存狀態 | 建議採購量 |
+|------|-----------|---------|------|------|---------|-------------|---------|-----------|
+| YYYYMM | DD-MMM-YY | Number | Number | Number | Number | Number | Status Icon | Number/NULL |
+              
 ## SQL template
 WITH latest_valid_inventory_date AS (
     SELECT
@@ -52,9 +61,7 @@ monthly_forecast AS (
     WHERE section = 'Sales Forecast'
         AND SUBSTRING(data_type, 1, 6) >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
-
     UNION ALL
-
     -- Purchase Forecast: 移除月份偏移，直接使用當月資料
     SELECT
         SUBSTRING(data_type, 1, 6) as period,
