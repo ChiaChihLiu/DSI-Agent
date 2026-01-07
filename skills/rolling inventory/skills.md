@@ -11,7 +11,6 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 - **常用模板**：SQL template。
 - **常用模板**：table or view : optw_dw_dsi_monthly_data_v
 - **查詢型號以secondary_model為主** : Where secondary_model like 'model_name'
-- **查詢範圍**:當月以及未來的資料
 - **庫存基準日選擇**:- 取上一個月為當月的庫存基準日
 - 確保使用完整月份的庫存數據
 - 使用日期比較排序，不使用字串 MAX()
