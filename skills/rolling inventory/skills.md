@@ -11,11 +11,24 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 - **常用模板**：SQL template。
 - **常用模板**：table or view : optw_dw_dsi_monthly_data_v
 - **查詢型號以secondary_model為主** : Where secondary_model like 'model_name'
-- **查詢範圍**:當月往後到最後可得到的資料
+- **查詢範圍**:當月往後7個月
 ## Steps
 - Collect data by secondary model is {XXXXXX} for each region,
 - Only data source is "Begin Inventory" with data type ONLY "FG + In Transit" as "Begin Inventory", its bucket date is "Start Date" and include data source are "Sales Forecast" , "ETA Purchase Forecast" with bucket date after "Start Date" 
 - use "Begin Inventory" with "Sales Forecast" and "ETA Purchase Forecast" with arrived bucket date to calculate "End Inventory", "End Inventory" of this bucket date will be the next bucket date "Begin Inventory" show me output for detail table with border of running inventory, 
 - show result table with border
 
+### 計算公式
 ```
+End Inv. = Begin Inv. + Purchase FCST(ETA) - Sales FCST
+下期 Begin Inv. = 本期 End Inv.
+```
+
+### 輸出欄位（順序固定）
+Bucket | Begin Inv. | Purchase FCST(ETA) | Sales FCST | End Inv.
+
+### 關鍵實作
+- 使用 CTE 分層處理
+- Window Function: LAG() 取上期值, SUM() OVER() 累積計算
+- COALESCE 處理 NULL 為 0
+- bucket 格式: YYYYMM
