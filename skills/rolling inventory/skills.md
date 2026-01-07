@@ -23,7 +23,7 @@ WITH latest_valid_inventory_date AS (
         section,
         SUBSTRING(section, 24) as cutoff_date_str,
         TO_DATE(SUBSTRING(section, 24), 'DD-MON-YY') as cutoff_date
-    FROM netsuite.optw_dw_dsi_st
+    FROM optw_dw_dsi_monthly_data
     WHERE section LIKE 'Inventory cut off date:%'
         AND TO_DATE(SUBSTRING(section, 24), 'DD-MON-YY')
             BETWEEN DATE_TRUNC('month', ADD_MONTHS(CURRENT_DATE, -1)::TIMESTAMP)::DATE
@@ -36,7 +36,7 @@ current_inventory AS (
         SUM(CASE WHEN t.data_type = 'FG + In Transit' THEN t.value ELSE 0 END) as initial_inventory,
         l.cutoff_date_str as inventory_date
     FROM latest_valid_inventory_date l
-    JOIN netsuite.optw_dw_dsi_st t
+    JOIN optw_dw_dsi_monthly_data t
         ON t.section = l.section
         AND t.data_type = 'FG + In Transit'
     GROUP BY l.cutoff_date_str
@@ -47,7 +47,7 @@ monthly_forecast AS (
         SUBSTRING(data_type, 1, 6) as period,
         SUM(value) as demand,
         0 as supply
-    FROM netsuite.optw_dw_dsi_st
+    FROM optw_dw_dsi_monthly_data
     WHERE section = 'Sales Forecast'
         AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
@@ -59,7 +59,7 @@ monthly_forecast AS (
         SUBSTRING(data_type, 1, 6) as period,
         0 as demand,
         SUM(value) as supply
-    FROM netsuite.optw_dw_dsi_st
+    FROM optw_dw_dsi_monthly_data
     WHERE section = 'Purchase Forecast(ETA)'
         AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
