@@ -1,5 +1,5 @@
 {
-  "table_name": "netsuite.optw_dw_dsi_st",
+  "table_name": "netsuite.optw_dw_dsi_monthly_data",
   "domain": "Sales & Inventory",
   "description": "存放銷售預測、採購預測及實際銷售的數據表，為 DSI 分析的核心。",
   "columns": [
@@ -23,13 +23,9 @@
   ],
   "relationships": [
     {
-      "to_table": "dw_master.item_info",
-      "join_on": "item_id",
+      "to_table": "netsuite.optw_dw_dsi_model",
+      "join_on": "primary_model"&"secondary_model",
       "description": "關聯產品主檔以獲取品名與規格。"
     }
-  ],
-  "sql_hints": {
-    "filter_logic": "查詢實際業績時必須加上 WHERE section = 'TOTAL SALES'。",
-    "redshift_optimization": "篩選時間請使用 report_date 以利用 Sort Key 效能。"
-  }
+  ]
 }
