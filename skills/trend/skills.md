@@ -5,6 +5,7 @@ description: 當用戶提到「sales trend」、「銷售趨勢]使用此技能
 **key logic**
 -- Use data source are sold history and sales forecast with date bucket as sales quantity of secondary model {XXXX}
 -- If sold history and sales forecast in same date bucket then use sales forecast as sales quantity 
+-- if user not mention the period, just query all available period data
 **SQL template**
 SELECT 
     data_type,
