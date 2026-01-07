@@ -10,7 +10,7 @@ description: 當用戶提到「sales trend」、「銷售趨勢]使用此技能
 
 ### Standard Table Format for sales trend ⭐
 
-When responding to rolling inventory queries, ALWAYS present results in this standardized format:
+When responding to sales trend queries, ALWAYS present results in this standardized format:
 
 | data_type |  total_sales | data_source |
 |------     |-----------   |---------    |
