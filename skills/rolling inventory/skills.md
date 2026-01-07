@@ -12,6 +12,9 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 - **常用模板**：table or view : optw_dw_dsi_monthly_data_v
 - **查詢型號以secondary_model為主** : Where secondary_model like 'model_name'
 - **查詢範圍**:當月往後7個月
+- **庫存基準日選擇**:- 取上一個月為當月的庫存基準日
+- 確保使用完整月份的庫存數據
+- 使用日期比較排序，不使用字串 MAX()
 ## Steps
 - Collect data by secondary model is {XXXXXX} for each region,
 - Only data source is "Begin Inventory" with data type ONLY "FG + In Transit" as "Begin Inventory", its bucket date is "Start Date" and include data source are "Sales Forecast" , "ETA Purchase Forecast" with bucket date after "Start Date" 
