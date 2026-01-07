@@ -6,23 +6,10 @@ description: 執行進階的 PSI (進銷存) 滾動庫存預測,當用戶提到�
 依據核心商務邏輯產生正確的SQL
 
 ## 核心商務邏輯
-- **計算公式**：期末庫存 = 期初庫存 + 供應 - 需求(t)。
+- **計算公式**：期末庫存 = 期初庫存 + 供應 - 需求。
 - **常用模板**：table or view : optw_dw_dsi_monthly_data_v
 - **查詢型號以secondary_model為主** : Where secondary_model like 'model_name'
 
-
-name: psi_rolling_forecast
-description: 執行進階的 PSI (進銷存) 滾動庫存預測。處理採購偏移 (+1 month offset) 與期末/期初庫存結轉,當用戶提到「供需缺口」、「未來庫存變化」或「建議採購量」,[滾動庫存]時，使用此技能
------
-# 技能說明
-依據核心商務邏輯產生正確的SQL
-
-## 核心商務邏輯
-- **採購偏移**：`Purchase Forecast` 的庫存需使用 `ADD_MONTHS(..., 1)` 偏移至次月。
-- **計算公式**：期末庫存 = 期初庫存 + 供應(t+1) - 需求(t)。
-- **輸出規範**：必須遵循標準 9 欄位格式（期間/基準日/期初/需求/供應/月淨變動/期末/狀態/建議採購）。
-- **常用模板**：SQL template。
-- 
 # 滾動預測 SOP
 - **Step1**： 了解用戶問題和意圖
 - **Step2**： 了解 database or tables or import logic,if need you can Call the 'Call 'My Sub-Workflow 2' to know the basic infromation
@@ -39,8 +26,8 @@ WITH latest_valid_inventory_date AS (
     FROM netsuite.optw_dw_dsi_monthly_data_v
     WHERE section LIKE 'Inventory cut off date:%'
         AND TO_DATE(SUBSTRING(section, 24), 'DD-MON-YY')
-            BETWEEN DATE_TRUNC('month', ADD_MONTHS(CURRENT_DATE, -1)::TIMESTAMP)::DATE
-            AND LAST_DAY(ADD_MONTHS(CURRENT_DATE, -1))
+            BETWEEN DATE_TRUNC('month', (CURRENT_DATE - INTERVAL '1 month'))::DATE
+            AND LAST_DAY(CURRENT_DATE - INTERVAL '1 month')
     ORDER BY cutoff_date DESC
     LIMIT 1
 ),
@@ -56,28 +43,27 @@ current_inventory AS (
     GROUP BY l.cutoff_date_str
 ),
 monthly_forecast AS (
-    -- Sales Forecast: 當月需求（期間不變）
+    -- Sales Forecast: 當月需求
     SELECT
         SUBSTRING(data_type, 1, 6) as period,
         SUM(value) as demand,
         0 as supply
     FROM netsuite.optw_dw_dsi_monthly_data_v
     WHERE section = 'Sales Forecast'
-        AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
+        AND SUBSTRING(data_type, 1, 6) >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
     GROUP BY SUBSTRING(data_type, 1, 6)
 
     UNION ALL
 
-    -- Purchase Forecast:⭐
-    -- 
+    -- Purchase Forecast: 移除月份偏移，直接使用當月資料
     SELECT
-        TO_CHAR(TO_DATE(SUBSTRING(data_type, 1, 6), 'YYYYMM')), 'YYYYMM') as period,
+        SUBSTRING(data_type, 1, 6) as period,
         0 as demand,
         SUM(value) as supply
     FROM netsuite.optw_dw_dsi_st
     WHERE section = 'Purchase Forecast(ETA)'
-        AND data_type >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
-    GROUP BY TO_CHAR(ADD_MONTHS(TO_DATE(SUBSTRING(data_type, 1, 6), 'YYYYMM'), 1), 'YYYYMM')
+        AND SUBSTRING(data_type, 1, 6) >= TO_CHAR(CURRENT_DATE, 'YYYYMM')
+    GROUP BY SUBSTRING(data_type, 1, 6)
 ),
 monthly_forecast_aggregated AS (
     -- 彙總各期間的需求與供應
@@ -102,39 +88,34 @@ forecast_with_cumulative AS (
     FROM monthly_forecast_aggregated
 )
 SELECT
-    f.period as 期間,
-    i.inventory_date as 庫存基準日,
-    -- 期初庫存 = 初始庫存 + 上期累積淨變動（使用 LAG）
+    f.period as "期間",
+    i.inventory_date as "庫存基準日",
+    -- 期初庫存 = 初始庫存 + 上期累積淨變動
     ROUND(
         i.initial_inventory +
         COALESCE(LAG(f.cumulative_net) OVER (ORDER BY f.period), 0),
         0
-    ) as 期初庫存,
-    ROUND(f.demand, 0) as 需求,
-    ROUND(f.supply, 0) as 供應,
-    ROUND(f.net_change, 0) as 月淨變動,
+    ) as "期初庫存",
+    ROUND(f.demand, 0) as "需求",
+    ROUND(f.supply, 0) as "供應",
+    ROUND(f.net_change, 0) as "月淨變動",
     -- 期末庫存 = 初始庫存 + 本期累積淨變動
     ROUND(
         i.initial_inventory + f.cumulative_net,
         0
-    ) as 預計期末庫存,
+    ) as "預計期末庫存",
     CASE
-        WHEN i.initial_inventory + f.cumulative_net < 0
-            THEN '🔴 預計缺貨'
-        WHEN i.initial_inventory + f.cumulative_net < 30
-            THEN '🟡 低庫存警告'
-        WHEN i.initial_inventory + f.cumulative_net < 60
-            THEN '🟢 正常'
+        WHEN i.initial_inventory + f.cumulative_net < 0 THEN '🔴 預計缺貨'
+        WHEN i.initial_inventory + f.cumulative_net < 30 THEN '🟡 低庫存警告'
+        WHEN i.initial_inventory + f.cumulative_net < 60 THEN '🟢 正常'
         ELSE '🟢 健康'
-    END as 庫存狀態,
-    -- NEW: Recommended Purchase Quantity
-    -- 🆕 v1.6 邏輯檢查：當需求為0時，不建議採購（避免庫存累積錯誤）
+    END as "庫存狀態",
+    -- 建議採購量
     CASE
-        WHEN i.initial_inventory + f.cumulative_net < 30
-            AND f.demand > 0  -- ⭐ 確保未來有需求才建議採購
+        WHEN i.initial_inventory + f.cumulative_net < 30 AND f.demand > 0
         THEN ROUND(60 - (i.initial_inventory + f.cumulative_net), 0)
         ELSE NULL
-    END as 建議採購量
+    END as "建議採購量"
 FROM forecast_with_cumulative f
 CROSS JOIN current_inventory i
 ORDER BY f.period;
